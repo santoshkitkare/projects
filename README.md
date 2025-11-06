@@ -1,2 +1,2 @@
-# projects
-Different Practice Projects to Learn new think
+# Projects
+Different Practice Projects to Learn new things and python frameworks
