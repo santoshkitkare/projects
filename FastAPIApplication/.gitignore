@@ -1,0 +1,8 @@
+.venv/*
+.python-version
+test*.db
+uv.lock
+.idea/*
+__pycache__/*
+*.pyc
+.env
