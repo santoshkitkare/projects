@@ -1,0 +1,8 @@
+pyspark==3.5.7
+sentence-transformers==5.1.2
+faiss-cpu==1.12.0
+fastapi==0.121.1
+uvicorn==0.38.0
+pandas==2.3.3
+pyarrow==22.0.0
+numpy==2.3.4

@@ -1,0 +1,71 @@
+Project: Semantic Search Engine for Customer Complaints using PySpark + Sentence-Transformers
+🎯 Goal
+
+Build a semantic search system where users can search for customer complaints or problem descriptions (e.g., “washing machine not draining”), and the system retrieves similar complaints from a large dataset — even if the exact words differ.
+
+For example:
+
+Query: “water not coming into washing machine”
+
+Matched results: “no water flow detected”, “machine not filling”, “inlet valve issue”
+
+🧩 1. Use Case
+Background
+
+In a large appliance company, millions of customer complaints are stored in a database.
+Traditional keyword search (SQL LIKE queries) fails because:
+
+Users describe the same issue using different words.
+
+Spelling and phrasing vary widely.
+
+We need semantic search — where meaning matters more than exact words.
+
+🏗️ 2. Architecture Overview
+                 ┌─────────────────────────────┐
+                 │    Raw Complaint Dataset     │
+                 │ (CSV, millions of records)   │
+                 └──────────────┬───────────────┘
+                                │
+                       (PySpark ETL)
+                                │
+                 ┌──────────────▼───────────────┐
+                 │ Data Cleaning & Preprocessing│
+                 └──────────────┬───────────────┘
+                                │
+                       (Batch Embedding)
+                                │
+                 ┌──────────────▼───────────────┐
+                 │Sentence-Transformer Model     │
+                 │ Generates Embeddings          │
+                 └──────────────┬───────────────┘
+                                │
+                 ┌──────────────▼───────────────┐
+                 │ Store in Parquet / FAISS / DB│
+                 └──────────────┬───────────────┘
+                                │
+                         (Search Query)
+                                │
+                 ┌──────────────▼───────────────┐
+                 │Embed Query + Cosine Similarity│
+                 │Return Top-K Similar Complaints│
+                 └───────────────────────────────┘
+
+⚙️ 3. Tech Stack
+Component	Tool
+Data Processing	PySpark
+Semantic Embeddings	Sentence-Transformers (MiniLM)
+Storage	Parquet (local) or FAISS (for similarity)
+Interface	Python script or FastAPI endpoint
+Hardware	CPU/GPU (optional for faster embedding)
+
+🧮 4. Dataset Example
+
+complaints.csv
+
+complaint_id	product	complaint_text
+1	Washing Machine	Water not filling properly
+2	Washing Machine	Drum making noise during spin
+3	Refrigerator	Cooling not happening
+4	Air Conditioner	Not cooling even after service
+5	Washing Machine	No water flow detected

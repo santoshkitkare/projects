@@ -1,0 +1,501 @@
+complaint_id,product,complaint_text
+1,Air Conditioner,remote not working
+2,Air Conditioner,not switching on
+3,Washing Machine,leakage during wash
+4,Refrigerator,light not working
+5,Washing Machine,clothes remain wet
+6,Washing Machine,water not filling
+7,Microwave Oven,buttons not responding
+8,Air Conditioner,hot air coming out
+9,Washing Machine,clothes remain wet
+10,Refrigerator,ice not forming
+11,Air Conditioner,remote not working
+12,Air Conditioner,fan not rotating
+13,Microwave Oven,buttons not responding
+14,Air Conditioner,not switching on
+15,Refrigerator,light not working
+16,Air Conditioner,not cooling
+17,Refrigerator,not cooling properly
+18,Washing Machine,drum not rotating
+19,Washing Machine,machine not spinning
+20,Washing Machine,water not filling
+21,Refrigerator,water leakage
+22,Microwave Oven,buttons not responding
+23,Air Conditioner,not cooling
+24,Washing Machine,machine not spinning
+25,Air Conditioner,fan not rotating
+26,Microwave Oven,burning smell
+27,Washing Machine,clothes remain wet
+28,Microwave Oven,display not working
+29,Washing Machine,water not filling
+30,Microwave Oven,buttons not responding
+31,Air Conditioner,not switching on
+32,Microwave Oven,buttons not responding
+33,Refrigerator,ice not forming
+34,Washing Machine,leakage during wash
+35,Microwave Oven,display not working
+36,Refrigerator,compressor noisy
+37,Washing Machine,clothes remain wet
+38,Refrigerator,fridge too warm
+39,Air Conditioner,making loud noise
+40,Washing Machine,vibration while running
+41,Microwave Oven,buttons not responding
+42,Air Conditioner,fan not rotating
+43,Refrigerator,not cooling properly
+44,Microwave Oven,plate not rotating
+45,Washing Machine,machine not spinning
+46,Washing Machine,water not filling
+47,Microwave Oven,display not working
+48,Air Conditioner,remote not working
+49,Washing Machine,drum not rotating
+50,Refrigerator,ice not forming
+51,Air Conditioner,not switching on
+52,Air Conditioner,fan not rotating
+53,Air Conditioner,not cooling
+54,Washing Machine,drum not rotating
+55,Washing Machine,drum not rotating
+56,Washing Machine,water not filling
+57,Washing Machine,vibration while running
+58,Microwave Oven,burning smell
+59,Microwave Oven,not heating
+60,Washing Machine,stuck on rinse cycle
+61,Microwave Oven,door not closing
+62,Microwave Oven,burning smell
+63,Washing Machine,water not filling
+64,Air Conditioner,not cooling
+65,Washing Machine,error code E2
+66,Air Conditioner,not cooling
+67,Microwave Oven,buttons not responding
+68,Washing Machine,water not filling
+69,Washing Machine,clothes remain wet
+70,Washing Machine,error code E2
+71,Washing Machine,clothes remain wet
+72,Refrigerator,compressor noisy
+73,Washing Machine,door not locking
+74,Refrigerator,water leakage
+75,Refrigerator,ice not forming
+76,Air Conditioner,fan not rotating
+77,Washing Machine,vibration while running
+78,Air Conditioner,remote not working
+79,Microwave Oven,door not closing
+80,Microwave Oven,buttons not responding
+81,Microwave Oven,stops midway
+82,Refrigerator,ice not forming
+83,Microwave Oven,not heating
+84,Refrigerator,light not working
+85,Air Conditioner,airflow weak
+86,Refrigerator,water leakage
+87,Microwave Oven,burning smell
+88,Refrigerator,water leakage
+89,Washing Machine,leakage during wash
+90,Washing Machine,clothes remain wet
+91,Washing Machine,stuck on rinse cycle
+92,Air Conditioner,remote not working
+93,Microwave Oven,burning smell
+94,Microwave Oven,plate not rotating
+95,Air Conditioner,airflow weak
+96,Air Conditioner,remote not working
+97,Refrigerator,compressor noisy
+98,Air Conditioner,airflow weak
+99,Refrigerator,fridge too warm
+100,Washing Machine,door not locking
+101,Washing Machine,clothes remain wet
+102,Microwave Oven,buttons not responding
+103,Refrigerator,fridge too warm
+104,Microwave Oven,stops midway
+105,Air Conditioner,not cooling
+106,Refrigerator,water leakage
+107,Refrigerator,compressor noisy
+108,Air Conditioner,leaking water
+109,Refrigerator,compressor noisy
+110,Microwave Oven,display not working
+111,Microwave Oven,door not closing
+112,Air Conditioner,airflow weak
+113,Refrigerator,light not working
+114,Washing Machine,door not locking
+115,Microwave Oven,buttons not responding
+116,Washing Machine,drum not rotating
+117,Washing Machine,machine not spinning
+118,Air Conditioner,not switching on
+119,Air Conditioner,hot air coming out
+120,Refrigerator,not cooling properly
+121,Washing Machine,door not locking
+122,Air Conditioner,airflow weak
+123,Air Conditioner,remote not working
+124,Refrigerator,ice not forming
+125,Microwave Oven,burning smell
+126,Refrigerator,not cooling properly
+127,Refrigerator,compressor noisy
+128,Washing Machine,water not filling
+129,Refrigerator,bad smell inside
+130,Refrigerator,compressor noisy
+131,Washing Machine,clothes remain wet
+132,Air Conditioner,remote not working
+133,Refrigerator,fridge too warm
+134,Refrigerator,door not closing
+135,Microwave Oven,plate not rotating
+136,Air Conditioner,fan not rotating
+137,Refrigerator,fridge too warm
+138,Microwave Oven,not heating
+139,Air Conditioner,leaking water
+140,Refrigerator,compressor noisy
+141,Microwave Oven,burning smell
+142,Refrigerator,bad smell inside
+143,Air Conditioner,remote not working
+144,Air Conditioner,airflow weak
+145,Refrigerator,water leakage
+146,Refrigerator,water leakage
+147,Washing Machine,drum not rotating
+148,Microwave Oven,plate not rotating
+149,Washing Machine,vibration while running
+150,Refrigerator,water leakage
+151,Air Conditioner,not cooling
+152,Microwave Oven,stops midway
+153,Refrigerator,compressor noisy
+154,Microwave Oven,not heating
+155,Refrigerator,fridge too warm
+156,Refrigerator,compressor noisy
+157,Washing Machine,leakage during wash
+158,Air Conditioner,fan not rotating
+159,Microwave Oven,stops midway
+160,Refrigerator,door not closing
+161,Refrigerator,fridge too warm
+162,Air Conditioner,not cooling
+163,Refrigerator,light not working
+164,Washing Machine,vibration while running
+165,Microwave Oven,buttons not responding
+166,Microwave Oven,display not working
+167,Air Conditioner,fan not rotating
+168,Washing Machine,water not filling
+169,Microwave Oven,plate not rotating
+170,Washing Machine,drum not rotating
+171,Refrigerator,compressor noisy
+172,Air Conditioner,leaking water
+173,Refrigerator,ice not forming
+174,Refrigerator,bad smell inside
+175,Washing Machine,clothes remain wet
+176,Microwave Oven,buttons not responding
+177,Air Conditioner,making loud noise
+178,Refrigerator,not cooling properly
+179,Refrigerator,water leakage
+180,Air Conditioner,fan not rotating
+181,Washing Machine,stuck on rinse cycle
+182,Washing Machine,drum not rotating
+183,Air Conditioner,making loud noise
+184,Refrigerator,water leakage
+185,Microwave Oven,stops midway
+186,Microwave Oven,door not closing
+187,Microwave Oven,burning smell
+188,Microwave Oven,plate not rotating
+189,Microwave Oven,burning smell
+190,Air Conditioner,fan not rotating
+191,Air Conditioner,airflow weak
+192,Air Conditioner,making loud noise
+193,Microwave Oven,not heating
+194,Microwave Oven,display not working
+195,Air Conditioner,hot air coming out
+196,Washing Machine,stuck on rinse cycle
+197,Washing Machine,drum not rotating
+198,Microwave Oven,buttons not responding
+199,Washing Machine,clothes remain wet
+200,Refrigerator,fridge too warm
+201,Refrigerator,ice not forming
+202,Refrigerator,ice not forming
+203,Air Conditioner,airflow weak
+204,Air Conditioner,airflow weak
+205,Washing Machine,door not locking
+206,Refrigerator,ice not forming
+207,Air Conditioner,not switching on
+208,Refrigerator,door not closing
+209,Refrigerator,light not working
+210,Washing Machine,drum not rotating
+211,Refrigerator,not cooling properly
+212,Microwave Oven,display not working
+213,Air Conditioner,airflow weak
+214,Washing Machine,stuck on rinse cycle
+215,Air Conditioner,remote not working
+216,Air Conditioner,leaking water
+217,Air Conditioner,hot air coming out
+218,Microwave Oven,display not working
+219,Air Conditioner,not switching on
+220,Air Conditioner,not cooling
+221,Washing Machine,stuck on rinse cycle
+222,Washing Machine,leakage during wash
+223,Washing Machine,drum not rotating
+224,Microwave Oven,door not closing
+225,Microwave Oven,plate not rotating
+226,Washing Machine,stuck on rinse cycle
+227,Microwave Oven,burning smell
+228,Refrigerator,water leakage
+229,Washing Machine,water not filling
+230,Washing Machine,vibration while running
+231,Refrigerator,light not working
+232,Refrigerator,fridge too warm
+233,Microwave Oven,burning smell
+234,Microwave Oven,door not closing
+235,Air Conditioner,leaking water
+236,Washing Machine,door not locking
+237,Air Conditioner,fan not rotating
+238,Washing Machine,stuck on rinse cycle
+239,Microwave Oven,stops midway
+240,Microwave Oven,plate not rotating
+241,Air Conditioner,airflow weak
+242,Washing Machine,error code E2
+243,Washing Machine,error code E2
+244,Microwave Oven,door not closing
+245,Air Conditioner,remote not working
+246,Microwave Oven,display not working
+247,Microwave Oven,not heating
+248,Air Conditioner,fan not rotating
+249,Refrigerator,door not closing
+250,Microwave Oven,display not working
+251,Refrigerator,bad smell inside
+252,Washing Machine,machine not spinning
+253,Refrigerator,light not working
+254,Refrigerator,compressor noisy
+255,Refrigerator,compressor noisy
+256,Air Conditioner,making loud noise
+257,Air Conditioner,not cooling
+258,Air Conditioner,hot air coming out
+259,Refrigerator,water leakage
+260,Refrigerator,bad smell inside
+261,Air Conditioner,airflow weak
+262,Washing Machine,machine not spinning
+263,Refrigerator,fridge too warm
+264,Microwave Oven,buttons not responding
+265,Washing Machine,door not locking
+266,Washing Machine,stuck on rinse cycle
+267,Air Conditioner,fan not rotating
+268,Refrigerator,water leakage
+269,Washing Machine,machine not spinning
+270,Refrigerator,fridge too warm
+271,Washing Machine,machine not spinning
+272,Microwave Oven,display not working
+273,Washing Machine,water not filling
+274,Air Conditioner,airflow weak
+275,Washing Machine,error code E2
+276,Washing Machine,clothes remain wet
+277,Refrigerator,compressor noisy
+278,Air Conditioner,leaking water
+279,Microwave Oven,burning smell
+280,Air Conditioner,airflow weak
+281,Microwave Oven,stops midway
+282,Microwave Oven,door not closing
+283,Air Conditioner,hot air coming out
+284,Microwave Oven,display not working
+285,Microwave Oven,stops midway
+286,Air Conditioner,making loud noise
+287,Microwave Oven,not heating
+288,Refrigerator,light not working
+289,Washing Machine,machine not spinning
+290,Refrigerator,water leakage
+291,Microwave Oven,door not closing
+292,Microwave Oven,buttons not responding
+293,Microwave Oven,not heating
+294,Microwave Oven,burning smell
+295,Washing Machine,leakage during wash
+296,Refrigerator,door not closing
+297,Air Conditioner,hot air coming out
+298,Microwave Oven,buttons not responding
+299,Washing Machine,water not filling
+300,Washing Machine,drum not rotating
+301,Washing Machine,water not filling
+302,Microwave Oven,display not working
+303,Air Conditioner,fan not rotating
+304,Washing Machine,leakage during wash
+305,Refrigerator,water leakage
+306,Air Conditioner,fan not rotating
+307,Refrigerator,bad smell inside
+308,Air Conditioner,remote not working
+309,Microwave Oven,not heating
+310,Washing Machine,machine not spinning
+311,Air Conditioner,not switching on
+312,Refrigerator,compressor noisy
+313,Washing Machine,leakage during wash
+314,Air Conditioner,remote not working
+315,Air Conditioner,leaking water
+316,Refrigerator,water leakage
+317,Washing Machine,clothes remain wet
+318,Microwave Oven,not heating
+319,Microwave Oven,stops midway
+320,Microwave Oven,buttons not responding
+321,Refrigerator,door not closing
+322,Refrigerator,water leakage
+323,Washing Machine,machine not spinning
+324,Washing Machine,door not locking
+325,Refrigerator,not cooling properly
+326,Refrigerator,light not working
+327,Microwave Oven,buttons not responding
+328,Air Conditioner,not cooling
+329,Air Conditioner,fan not rotating
+330,Refrigerator,compressor noisy
+331,Microwave Oven,plate not rotating
+332,Air Conditioner,remote not working
+333,Air Conditioner,not switching on
+334,Refrigerator,water leakage
+335,Washing Machine,vibration while running
+336,Microwave Oven,not heating
+337,Microwave Oven,not heating
+338,Air Conditioner,hot air coming out
+339,Refrigerator,light not working
+340,Air Conditioner,fan not rotating
+341,Washing Machine,error code E2
+342,Air Conditioner,not cooling
+343,Air Conditioner,making loud noise
+344,Washing Machine,machine not spinning
+345,Air Conditioner,remote not working
+346,Air Conditioner,not cooling
+347,Refrigerator,light not working
+348,Refrigerator,light not working
+349,Washing Machine,drum not rotating
+350,Microwave Oven,stops midway
+351,Microwave Oven,buttons not responding
+352,Microwave Oven,burning smell
+353,Microwave Oven,door not closing
+354,Microwave Oven,display not working
+355,Microwave Oven,stops midway
+356,Refrigerator,fridge too warm
+357,Refrigerator,not cooling properly
+358,Washing Machine,vibration while running
+359,Microwave Oven,door not closing
+360,Microwave Oven,burning smell
+361,Refrigerator,water leakage
+362,Microwave Oven,stops midway
+363,Refrigerator,fridge too warm
+364,Refrigerator,bad smell inside
+365,Refrigerator,not cooling properly
+366,Air Conditioner,airflow weak
+367,Microwave Oven,door not closing
+368,Washing Machine,drum not rotating
+369,Washing Machine,error code E2
+370,Air Conditioner,not switching on
+371,Washing Machine,door not locking
+372,Refrigerator,fridge too warm
+373,Air Conditioner,making loud noise
+374,Washing Machine,vibration while running
+375,Microwave Oven,door not closing
+376,Washing Machine,drum not rotating
+377,Air Conditioner,leaking water
+378,Air Conditioner,leaking water
+379,Refrigerator,ice not forming
+380,Refrigerator,water leakage
+381,Microwave Oven,buttons not responding
+382,Refrigerator,ice not forming
+383,Refrigerator,bad smell inside
+384,Air Conditioner,hot air coming out
+385,Microwave Oven,display not working
+386,Washing Machine,leakage during wash
+387,Microwave Oven,plate not rotating
+388,Air Conditioner,fan not rotating
+389,Refrigerator,compressor noisy
+390,Refrigerator,ice not forming
+391,Air Conditioner,airflow weak
+392,Microwave Oven,buttons not responding
+393,Air Conditioner,remote not working
+394,Refrigerator,not cooling properly
+395,Air Conditioner,not switching on
+396,Microwave Oven,plate not rotating
+397,Microwave Oven,burning smell
+398,Washing Machine,door not locking
+399,Washing Machine,machine not spinning
+400,Refrigerator,light not working
+401,Microwave Oven,buttons not responding
+402,Washing Machine,stuck on rinse cycle
+403,Refrigerator,bad smell inside
+404,Microwave Oven,stops midway
+405,Microwave Oven,stops midway
+406,Air Conditioner,not switching on
+407,Washing Machine,error code E2
+408,Refrigerator,water leakage
+409,Microwave Oven,stops midway
+410,Microwave Oven,burning smell
+411,Air Conditioner,fan not rotating
+412,Microwave Oven,display not working
+413,Air Conditioner,hot air coming out
+414,Refrigerator,compressor noisy
+415,Microwave Oven,plate not rotating
+416,Microwave Oven,not heating
+417,Air Conditioner,fan not rotating
+418,Microwave Oven,not heating
+419,Microwave Oven,buttons not responding
+420,Air Conditioner,not cooling
+421,Washing Machine,error code E2
+422,Washing Machine,machine not spinning
+423,Microwave Oven,plate not rotating
+424,Microwave Oven,burning smell
+425,Washing Machine,leakage during wash
+426,Air Conditioner,hot air coming out
+427,Air Conditioner,leaking water
+428,Air Conditioner,airflow weak
+429,Air Conditioner,not cooling
+430,Refrigerator,compressor noisy
+431,Refrigerator,not cooling properly
+432,Air Conditioner,not switching on
+433,Microwave Oven,buttons not responding
+434,Washing Machine,vibration while running
+435,Air Conditioner,not switching on
+436,Refrigerator,compressor noisy
+437,Air Conditioner,making loud noise
+438,Washing Machine,clothes remain wet
+439,Microwave Oven,display not working
+440,Air Conditioner,hot air coming out
+441,Air Conditioner,leaking water
+442,Air Conditioner,remote not working
+443,Washing Machine,error code E2
+444,Washing Machine,leakage during wash
+445,Refrigerator,ice not forming
+446,Refrigerator,water leakage
+447,Washing Machine,door not locking
+448,Refrigerator,bad smell inside
+449,Air Conditioner,not cooling
+450,Washing Machine,error code E2
+451,Refrigerator,water leakage
+452,Washing Machine,clothes remain wet
+453,Microwave Oven,display not working
+454,Microwave Oven,stops midway
+455,Washing Machine,stuck on rinse cycle
+456,Air Conditioner,airflow weak
+457,Washing Machine,machine not spinning
+458,Refrigerator,not cooling properly
+459,Washing Machine,stuck on rinse cycle
+460,Microwave Oven,buttons not responding
+461,Microwave Oven,burning smell
+462,Refrigerator,light not working
+463,Washing Machine,vibration while running
+464,Refrigerator,compressor noisy
+465,Air Conditioner,airflow weak
+466,Washing Machine,door not locking
+467,Air Conditioner,leaking water
+468,Air Conditioner,not switching on
+469,Microwave Oven,stops midway
+470,Washing Machine,drum not rotating
+471,Air Conditioner,hot air coming out
+472,Refrigerator,light not working
+473,Microwave Oven,buttons not responding
+474,Air Conditioner,fan not rotating
+475,Air Conditioner,not switching on
+476,Air Conditioner,leaking water
+477,Washing Machine,stuck on rinse cycle
+478,Refrigerator,bad smell inside
+479,Air Conditioner,not switching on
+480,Air Conditioner,remote not working
+481,Air Conditioner,not switching on
+482,Air Conditioner,making loud noise
+483,Refrigerator,door not closing
+484,Air Conditioner,airflow weak
+485,Refrigerator,fridge too warm
+486,Air Conditioner,leaking water
+487,Microwave Oven,buttons not responding
+488,Washing Machine,clothes remain wet
+489,Refrigerator,light not working
+490,Microwave Oven,door not closing
+491,Washing Machine,door not locking
+492,Microwave Oven,door not closing
+493,Air Conditioner,leaking water
+494,Air Conditioner,remote not working
+495,Washing Machine,stuck on rinse cycle
+496,Washing Machine,water not filling
+497,Refrigerator,door not closing
+498,Air Conditioner,making loud noise
+499,Microwave Oven,door not closing
+500,Refrigerator,water leakage

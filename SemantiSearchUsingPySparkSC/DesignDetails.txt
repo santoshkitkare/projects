@@ -1,0 +1,56 @@
+🧱 1. PySpark
+➤ What it is:
+
+PySpark is the Python API for Apache Spark, a distributed computing framework.
+It’s used to process and analyze large-scale data (structured or unstructured) across multiple machines in a cluster.
+
+➤ Primary Use:
+
+Big Data Processing
+ETL (Extract, Transform, Load) operations
+Distributed DataFrames and SQL
+Machine Learning on large datasets (via pyspark.ml)
+Scalable data pipelines
+
+➤ Example:
+from pyspark.sql import SparkSession
+
+spark = SparkSession.builder.appName("Example").getOrCreate()
+df = spark.read.csv("data.csv", header=True, inferSchema=True)
+df.groupBy("category").count().show()
+
+
+✅ PySpark = Distributed Data Processing
+
+🧠 2. Sentence-Transformers
+➤ What it is:
+
+sentence-transformers is a Python NLP library (built on top of PyTorch and Transformers) used for semantic text embeddings.
+
+It helps you convert sentences, paragraphs, or documents into dense vector representations (embeddings) that capture semantic meaning — ideal for semantic search, clustering, or similarity tasks.
+
+➤ Primary Use:
+Text Embedding
+Semantic Search / Information Retrieval
+Text Clustering / Deduplication
+Question Answering (RAG systems)
+
+➤ Example:
+from sentence_transformers import SentenceTransformer, util
+
+model = SentenceTransformer('all-MiniLM-L6-v2')
+sentences = ["Machine learning is amazing", "I love AI"]
+embeddings = model.encode(sentences)
+similarity = util.cos_sim(embeddings[0], embeddings[1])
+print(similarity)
+
+
+✅ Sentence-Transformers = Semantic Understanding of Text
+
+🧩 3. When to Use Which
+Task	Use PySpark	Use Sentence-Transformers
+Large-scale data processing (GBs/TBs)	✅	❌
+Data cleaning, joins, aggregations	✅	❌
+Deep text understanding or embeddings	❌	✅
+Semantic search or document similarity	❌	✅
+Distributed model inference at scale	✅ (you can run sentence-transformers inside PySpark workers)
