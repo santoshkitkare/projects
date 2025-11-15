@@ -5,6 +5,8 @@ Upload File to S3 Bucket -> SQS Notification with Batch Size = 1 -> Lambda Trigg
 ## Terraform Deploy Step:
 ### Notes & deploy steps (Terraform)
 1. Place your Lambda handler.py in lambda/ and zip into s3_processor.zip (or set lambda_zip_path to wherever your zip is).
+Note: Create zip file command in powershell:
+powershell Compress-Archive -Path lambda_handler_sns.py -DestinationPath ../sns_s3_file_processing_parallel_lambda.zip -Force
 2. cd lambda && zip -r ../s3_processor.zip .
 3. terraform init
 4. terraform apply -auto-approve -var 's3_input_bucket=your-unique-bucket-name'

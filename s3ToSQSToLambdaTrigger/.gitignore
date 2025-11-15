@@ -1,2 +1,4 @@
-.terraform/*
+Terraform/.terraform*
+TerraformSNS/.terraform*
 terraform.exe
+*.zip
