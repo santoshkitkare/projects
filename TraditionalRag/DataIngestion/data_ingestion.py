@@ -1,11 +1,14 @@
 import glob
 import os
-from langchain_community.document_loaders import TextLoader, PyMuPDFLoader
+from langchain_community.document_loaders import TextLoader, PyMuPDFLoader, Docx2txtLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import ChatOpenAI
 from sentence_transformers import SentenceTransformer
 import faiss
 import pickle
 from copy import deepcopy
+from llm_prompts import SYSTEM_PROMPT
+from dotenv import load_dotenv
 
 FAISS_INDEX_FILE = "faiss_index.index"
 METADATA_FILE = "faiss_metadata.pkl"
@@ -13,10 +16,12 @@ METADATA_FILE = "faiss_metadata.pkl"
 class DataIngestion:
     _model_cache = None  # Class-level cache for the SentenceTransformer model
     
-    def __init__(self, output_folder="output/", chunk_size=500, chunk_overlap=100):
+    def __init__(self, output_folder="output/", chunk_size=1000, chunk_overlap=200, 
+                 llm_model_name="gpt-4o-mini"):
         self.output_folder = output_folder
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
+        self.llm_model_name = llm_model_name
         
         if DataIngestion._model_cache is None:
             DataIngestion._model_cache = SentenceTransformer(
@@ -38,8 +43,20 @@ class DataIngestion:
             self.faiss_index = faiss.read_index(self.index_file)
             with open(self.metadata_file, "rb") as f:
                 self.split_documents = pickle.load(f)
+                
+            if self.faiss_index.ntotal != len(self.split_documents):
+                print("FAISS index size does not match metadata size, reingesting data...")
+                self.ingest_data()
         else:
+            # If no existing index, ingest data to create a new one
             print("No existing FAISS index found. A new index will be created upon data ingestion.")
+            self.ingest_data()
+   
+            
+        # Load environment variables
+        load_dotenv()
+        self.llm = ChatOpenAI(model_name=self.llm_model_name, temperature=0)
+        
             
         
     def _read_files(self, folder_path):
@@ -55,6 +72,7 @@ class DataIngestion:
         all_documents = []
         text_documents = []
         pdf_documents = []
+        docx_documents = []
         
         txt_files = glob.glob(f"{folder_path}/*.txt")
         for file in txt_files:
@@ -69,10 +87,17 @@ class DataIngestion:
             pdf_doc = pdf_loader.load()
             pdf_documents.extend(pdf_doc)
             all_documents.extend(pdf_doc)
+            
+        docx_files = glob.glob(f"{folder_path}/*.docx")
+        for file in docx_files:
+            docx_loader = Docx2txtLoader(file)
+            docx_doc = docx_loader.load()
+            docx_documents.extend(docx_doc)
+            all_documents.extend(docx_doc)
 
         return all_documents
 
-    def add_new_file(self, file_path):
+    def add_new_file(self, file_path, clear_existing=False):
         """
         Add a new file to the existing FAISS index.
 
@@ -80,8 +105,13 @@ class DataIngestion:
             file_path (_type_): _description_
         """
         try:
-            # Load existing metadata
-            if self.faiss_index.ntotal == 0:    
+            if clear_existing:
+                # Clear existing index and metadata
+                self.split_documents = []
+                self.faiss_index = faiss.IndexFlatL2(self.embedding_dimension)
+        
+            elif self.faiss_index.ntotal == 0:
+                # Load existing metadata
                 if os.path.exists(self.metadata_file) and os.path.exists(self.index_file):
                     with open(self.metadata_file, "rb") as f:
                         self.split_documents = pickle.load(f)
@@ -95,6 +125,8 @@ class DataIngestion:
                 loader = TextLoader(file_path, encoding='utf-8')
             elif file_path.endswith(".pdf"):
                 loader = PyMuPDFLoader(file_path)
+            elif file_path.endswith(".docx"):
+                loader = Docx2txtLoader(file_path)
             else:
                 print(f"Unsupported file format: {file_path}")
                 return
@@ -140,14 +172,13 @@ class DataIngestion:
         return embeddings
     
     
-    def ingest_data(self, folder_path):
+    def ingest_data(self, folder_path="../data/"):
         """
         Ingest data from the specified folder.
 
         Args:
             folder_path (_type_): _description_
         """
-        # Read Data from files
         documents = self._read_files(folder_path)
         
         # Split the document in chunks
@@ -197,10 +228,33 @@ class DataIngestion:
         return results
     
     
+    def get_answer(self, query):
+        """_summary_
+
+        Args:
+            context (_type_): _description_
+            query (_type_): _description_
+
+        Returns:
+            _type_: _description_
+        """
+        results = self.search(query, top_k=3)
+        context="\n".join([doc.page_content for doc in results]), 
+        
+        system_prompt = SYSTEM_PROMPT
+        response = self.llm.invoke([
+                                       {"role": "system", "content": system_prompt},
+                                       {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
+                                   ])
+        
+        print("Generated Answer: ", response.content)
+        return results, response.content
+
+    
 if __name__ == "__main__":
     data_ingestion = DataIngestion(output_folder="output/")
-    data_config = data_ingestion.ingest_data("../data/")
-    print(f"Total documents ingested: {data_config}")
+    # data_config = data_ingestion.ingest_data("../data/")
+    # print(f"Total documents ingested: {data_config}")
     
     query = "What is the supervised learning?"
     results = data_ingestion.search(query, top_k=3)
@@ -227,3 +281,11 @@ if __name__ == "__main__":
         for result in results:
             print(result.page_content)
         print("=================================  End of Search ========================")
+        
+        results, answer = data_ingestion.get_answer(query=query)
+        print(f"Matching Context  for \"{query}\":")
+        for idx, result in enumerate(results):
+            print(f"{idx + 1}. {result.page_content}")
+        print("=================================  End of Search ========================")
+        
+        print("Answer:", answer)
