@@ -3,6 +3,8 @@ import requests
 import time
 import json
 import base64
+import time
+import pandas as pd
 
 BACKEND_BASE_URL = "http://localhost:8000"   # FastAPI backend running locally
 
@@ -38,14 +40,14 @@ if uploaded_file and user_id and st.button("Start Upload"):
     with st.spinner("Uploading to S3..."):
         # headers = {"x-amz-content-sha256": "UNSIGNED-PAYLOAD"}
         # print("Sending headers:", upload_res.request.headers)
-        # upload_res = requests.put(presigned_url, data=uploaded_file.getvalue())
-        req = requests.Request("PUT", presigned_url, data=uploaded_file.getvalue())
-        prepared = req.prepare()
+        upload_res = requests.put(presigned_url, data=uploaded_file.getvalue())
+        # req = requests.Request("PUT", presigned_url, data=uploaded_file.getvalue())
+        # prepared = req.prepare()
 
-        st.write("🚀 Final request headers:", dict(prepared.headers))
+        # st.write("🚀 Final request headers:", dict(prepared.headers))
 
-        session = requests.Session()
-        upload_res = session.send(prepared)
+        # session = requests.Session()
+        # upload_res = session.send(prepared)
         print(upload_res.status_code)
         print(upload_res.text)
 
@@ -55,9 +57,49 @@ if uploaded_file and user_id and st.button("Start Upload"):
 
     st.success(f"Uploaded successfully. File ID: {file_id}")
     st.session_state["file_id"] = file_id
+    
+    complete_res = requests.post(
+        f"{BACKEND_BASE_URL}/api/v1/uploads/complete",
+        json={"fileId": file_id}
+    )
+    
+    if complete_res.status_code != 200:
+        st.error("Failed to mark upload complete")
+        st.stop()
 
 
-# -- UI Step 2: Status Check + Preview --
+    status_placeholder = st.empty()
+    progress = st.progress(0)
+
+    for i in range(100):
+        status = requests.get(f"{BACKEND_BASE_URL}/api/v1/uploads/{file_id}/status").json()
+        status_placeholder.info(f"📌 Status: {status['status']} — {status['message']}")
+        
+        if status["status"] == "completed":
+            progress.progress(100)
+            metadata = status["metadata"]
+            download_url = status["downloadUrl"]
+
+            st.success("🎉 Processing completed!")
+
+            with st.expander("🔍 Extracted Metadata", expanded=True):
+                st.json(metadata)
+
+            st.download_button(
+                label="⬇ Download Original File",
+                data=requests.get(download_url).content,
+                file_name=status["metadata"].get("originalFileName", "document.pdf")
+            )
+            break
+        elif status["status"] == "failed":
+            st.error(f"❌ Failed: {status['error']}")
+            st.stop()
+
+        progress.progress(int((i/100) * 80))   # 0–80% during worker time
+        time.sleep(3)
+
+
+#  UI Step 2: Status Check + Preview --
 if "file_id" in st.session_state:
     st.divider()
     file_id = st.session_state["file_id"]
@@ -86,3 +128,12 @@ if "file_id" in st.session_state:
 
         else:
             st.info("Still cooking… refresh again 👀")
+
+history = requests.get(f"{BACKEND_BASE_URL}/api/v1/uploads/user/{user_id}").json()
+df = pd.DataFrame(history)
+
+if len(df) > 0:
+    st.subheader("📜 Upload History")
+    st.dataframe(df)
+else:
+    st.info("No previous uploads found")

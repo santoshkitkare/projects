@@ -88,6 +88,7 @@ def run_extraction(file_path, file_type):
 
 
 def process_message(body: dict):
+    print("[WORKER] Processing message: ", body)
     file_id = body["fileId"]
     s3_info = body["s3Location"]
     bucket = s3_info["bucket"]
@@ -104,14 +105,23 @@ def process_message(body: dict):
 
     try:
         # download to temp file
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            s3_client.download_file(Bucket=bucket, Key=key, Filename=tmp.name)
-            extracted = run_extraction(tmp.name, doc.file_type)
-
-        metadata = {
-            "processedAt": datetime.utcnow().isoformat() + "Z",
-            **extracted
-        }
+        # with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        #     s3_client.download_file(Bucket=bucket, Key=key, Filename=tmp.name)
+        #     extracted = run_extraction(tmp.name, doc.file_type)
+        
+        tmp = tempfile.NamedTemporaryFile(delete=False)
+        tmp_path = tmp.name
+        tmp.close()
+        try:
+            s3_client.download_file(Bucket=bucket, Key=key, Filename=tmp_path)
+            extracted = run_extraction(tmp_path, doc.file_type)
+            metadata = {
+                "processedAt": datetime.utcnow().isoformat() + "Z",
+                **extracted
+            }
+        finally:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
 
         doc.status = "completed"
         doc.completed_time = datetime.utcnow()

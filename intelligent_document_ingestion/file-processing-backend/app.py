@@ -1,3 +1,4 @@
+import json
 import os
 import uuid
 from datetime import datetime
@@ -71,6 +72,14 @@ class StatusResponse(BaseModel):
     downloadUrl: str | None = None
     lastUpdated: datetime | None = None
     error: str | None = None
+    
+# Upload processing 
+class UploadCompleteRequest(BaseModel):
+    fileId: str
+
+class UploadCompleteResponse(BaseModel):
+    message: str
+
 
 # ======== FastAPI App ========
 app = FastAPI(title="File Processing Backend")
@@ -159,6 +168,7 @@ def request_upload(payload: UploadRequest = Body(...)):
     )
 
 
+
 @app.get("/api/v1/uploads/{file_id}/status", response_model=StatusResponse)
 def get_status(file_id: str):
     db = next(get_db())
@@ -195,3 +205,62 @@ def get_status(file_id: str):
         lastUpdated=doc.completed_time or doc.upload_time,
         error=doc.error
     )
+
+
+sqs = boto3.client("sqs", region_name=AWS_REGION)
+
+@app.post("/api/v1/uploads/complete", response_model=UploadCompleteResponse)
+def upload_complete(body: UploadCompleteRequest = Body(...)):
+    db = next(get_db())
+
+    doc = db.query(Document).filter(Document.file_id == body.fileId).first()
+    if not doc:
+        raise HTTPException(status_code=404, detail="fileId not found")
+
+    # Update DB
+    doc.status = "processing"
+    db.commit()
+
+    # Send message to SQS
+    message = {
+        "fileId": doc.file_id,
+        "userId": doc.user_id,
+        "fileType": doc.file_type,
+        "s3Location": {
+            "bucket": S3_BUCKET_NAME,
+            "key": doc.s3_key
+        }
+    }
+
+    try:
+        sqs.send_message(
+            QueueUrl=os.getenv("SQS_QUEUE_URL"),
+            MessageBody=json.dumps(message)
+        )
+    except Exception as e:
+        # If SQS push fails, revert status
+        doc.status = "pending"
+        doc.error = f"SQS push failed: {e}"
+        db.commit()
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return UploadCompleteResponse(message="Upload processed & job queued successfully")
+
+
+@app.get("/api/v1/uploads/user/{userId}")
+def list_user_docs(userId: str):
+    db = next(get_db())
+    docs = db.query(Document)\
+             .filter(Document.user_id == userId)\
+             .order_by(Document.upload_time.desc())\
+             .all()
+    return [
+        {
+            "fileId": d.file_id,
+            "fileName": d.file_name,
+            "status": d.status,
+            "uploaded": d.upload_time,
+            "completed": d.completed_time
+        }
+        for d in docs
+    ]
