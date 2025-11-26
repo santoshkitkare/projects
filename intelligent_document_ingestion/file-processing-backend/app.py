@@ -5,31 +5,43 @@ from datetime import datetime
 
 from fastapi import FastAPI, HTTPException
 from fastapi import Body
+from fastapi import Depends, status
+
+from fastapi.middleware.cors import CORSMiddleware
+
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from pydantic import BaseModel
+
+
 from sqlalchemy import (
     create_engine, Column, String, DateTime, Text, Integer, JSON
 )
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 import boto3
+from config import Base, S3_BUCKET_NAME, AWS_REGION, engine, s3_client
+from helper import get_db, build_s3_key
+from user import User, get_current_user, TokenResponse, MeUpdateRequest
+from user import require_admin, AdminCreateUserRequest, AdminUserResponse, AdminUpdateUserRequest
+from user import get_user_by_username, verify_password, hash_password, create_access_token
 
-load_dotenv()
+# load_dotenv()
 
-# ======== Config ========
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/filedb")
-S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "your-bucket-name")
-AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
+# # ======== Config ========
+# DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/filedb")
+# S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME", "your-bucket-name")
+# AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 
-if not S3_BUCKET_NAME:
-    raise RuntimeError("S3_BUCKET_NAME env var is required")
+# if not S3_BUCKET_NAME:
+#     raise RuntimeError("S3_BUCKET_NAME env var is required")
 
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(bind=engine)
-Base = declarative_base()
+# engine = create_engine(DATABASE_URL)
+# SessionLocal = sessionmaker(bind=engine)
+# Base = declarative_base()
 
-s3_client = boto3.client("s3", region_name=AWS_REGION, 
-                         config=boto3.session.Config(signature_version="s3v4",
-                                                     s3={"addressing_style": "virtual", "use_arn_region": True}))
+# s3_client = boto3.client("s3", region_name=AWS_REGION, 
+#                          config=boto3.session.Config(signature_version="s3v4",
+#                                                      s3={"addressing_style": "virtual", "use_arn_region": True}))
 
 # ======== DB Model ========
 class Document(Base):
@@ -47,7 +59,28 @@ class Document(Base):
     error = Column(Text, nullable=True)
     extracted_metadata = Column(JSON, nullable=True)  # flexible for demo
 
-Base.metadata.create_all(bind=engine)
+# Base.metadata.create_all(bind=engine)
+
+# # ---- Create default admin if no users exist ----
+# from passlib.context import CryptContext
+
+# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# def seed_admin():
+#     db = SessionLocal()
+#     existing = db.query(User).first()
+#     if not existing:
+#         admin = User(
+#             username="admin",
+#             password_hash=pwd_context.hash("admin@123"),
+#             role="admin"
+#         )
+#         db.add(admin)
+#         db.commit()
+#         print("🚀 Default admin created: username='admin' password='admin@123'")
+#     db.close()
+
+# seed_admin()
 
 # ======== Pydantic Schemas ========
 class UploadRequest(BaseModel):
@@ -84,25 +117,35 @@ class UploadCompleteResponse(BaseModel):
 # ======== FastAPI App ========
 app = FastAPI(title="File Processing Backend")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or ["http://localhost:8501"] for Streamlit
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-# ======== Helper ========
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 
-def build_s3_key(user_id: str, file_id: str, extension: str) -> str:
-    now = datetime.utcnow()
-    return f"uploads/{user_id}/{now.year}/{now.month:02}/{now.day:02}/{file_id}.{extension}"
+# # ======== Helper ========
+# def get_db():
+#     db = SessionLocal()
+#     try:
+#         yield db
+#     finally:
+#         db.close()
+
+
+# def build_s3_key(user_id: str, file_id: str, extension: str) -> str:
+#     now = datetime.utcnow()
+#     return f"uploads/{user_id}/{now.year}/{now.month:02}/{now.day:02}/{file_id}.{extension}"
 
 
 # ======== Routes ========
 
 @app.post("/api/v1/uploads/request", response_model=UploadResponse)
-def request_upload(payload: UploadRequest = Body(...)):
+def request_upload(payload: UploadRequest = Body(...),
+                   current_user: User = Depends(get_current_user),):
     db = next(get_db())
 
     if payload.fileSize <= 0:
@@ -127,7 +170,7 @@ def request_upload(payload: UploadRequest = Body(...)):
     # Create DB record
     doc = Document(
         file_id=file_id,
-        user_id=payload.userId,
+        user_id=current_user.user_id,   # use logged-in user,
         file_name=payload.fileName,
         file_type=payload.fileType,
         file_size=payload.fileSize,
@@ -248,10 +291,10 @@ def upload_complete(body: UploadCompleteRequest = Body(...)):
 
 
 @app.get("/api/v1/uploads/user/{userId}")
-def list_user_docs(userId: str):
+def list_user_docs(current_user: User = Depends(get_current_user)):
     db = next(get_db())
     docs = db.query(Document)\
-             .filter(Document.user_id == userId)\
+             .filter(Document.user_id == current_user.user_id)\
              .order_by(Document.upload_time.desc())\
              .all()
     return [
@@ -342,3 +385,133 @@ def delete_file(file_id: str):
     db.delete(doc)
     db.commit()
     return {"message": "Deleted"}
+
+
+@app.post("/auth/login", response_model=TokenResponse)
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    db = next(get_db())
+    user = get_user_by_username(db, form_data.username)
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+
+    access_token = create_access_token(
+        data={"sub": user.user_id, "role": user.role}
+    )
+    return TokenResponse(
+        accessToken=access_token,
+        userId=user.user_id,
+        username=user.username,
+        role=user.role,
+    )
+
+
+@app.put("/me/profile")
+def update_profile(
+    body: MeUpdateRequest,
+    current_user: User = Depends(get_current_user),
+):
+    db = next(get_db())
+
+    if body.username:
+        # Ensure unique
+        existing = db.query(User).filter(User.username == body.username).first()
+        if existing and existing.user_id != current_user.user_id:
+            raise HTTPException(status_code=400, detail="Username already taken")
+        current_user.username = body.username
+
+    if body.password:
+        current_user.password_hash = hash_password(body.password)
+
+    db.commit()
+    return {"message": "Profile updated"}
+
+
+@app.post("/admin/users", response_model=AdminUserResponse)
+def admin_create_user(
+    body: AdminCreateUserRequest,
+    admin: User = Depends(require_admin),
+):
+    db = next(get_db())
+
+    if body.role not in ["admin", "system"]:
+        raise HTTPException(status_code=400, detail="Invalid role")
+
+    if get_user_by_username(db, body.username):
+        raise HTTPException(status_code=400, detail="Username already exists")
+
+    user = User(
+        username=body.username,
+        password_hash=hash_password(body.password),
+        role=body.role,
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+
+    return AdminUserResponse(
+        userId=user.user_id,
+        username=user.username,
+        role=user.role,
+        created_at=user.created_at,
+        updated_at=user.updated_at,
+    )
+
+
+@app.get("/admin/users", response_model=list[AdminUserResponse])
+def admin_list_users(admin: User = Depends(require_admin)):
+    db = next(get_db())
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return [
+        AdminUserResponse(
+            userId=u.user_id,
+            username=u.username,
+            role=u.role,
+            created_at=u.created_at,
+            updated_at=u.updated_at,
+        )
+        for u in users
+    ]
+
+
+@app.put("/admin/users/{user_id}")
+def admin_update_user(
+    user_id: str,
+    body: AdminUpdateUserRequest,
+    admin: User = Depends(require_admin),
+):
+    db = next(get_db())
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if body.username:
+        existing = get_user_by_username(db, body.username)
+        if existing and existing.user_id != user_id:
+            raise HTTPException(status_code=400, detail="Username already exists")
+        user.username = body.username
+
+    if body.password:
+        user.password_hash = hash_password(body.password)
+
+    if body.role:
+        if body.role not in ["admin", "system"]:
+            raise HTTPException(status_code=400, detail="Invalid role")
+        user.role = body.role
+
+    db.commit()
+    return {"message": "User updated"}
+
+
+@app.delete("/admin/users/{user_id}")
+def admin_delete_user(
+    user_id: str,
+    admin: User = Depends(require_admin),
+):
+    db = next(get_db())
+    user = db.query(User).filter(User.user_id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted"}

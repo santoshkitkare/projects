@@ -6,10 +6,75 @@ import base64
 import time
 import pandas as pd
 
+
 BACKEND_BASE_URL = "http://localhost:8000"   # FastAPI backend running locally
 
 st.set_page_config(page_title="Document Intelligence Platform", layout="centered")
 st.title("📄 Document Processing Demo")
+
+# if "access_token" not in st.session_state:
+#     st.session_state["access_token"] = None
+#     st.session_state["role"] = None
+#     st.session_state["user_id"] = None
+#     st.session_state["username"] = None
+
+
+if "access_token" not in st.session_state:
+    st.session_state["access_token"] = None
+if "user_id" not in st.session_state:
+    st.session_state["user_id"] = None
+if "role" not in st.session_state:
+    st.session_state["role"] = None
+if "username" not in st.session_state:
+    st.session_state["username"] = None
+    
+if "access_token" not in st.session_state or not st.session_state["access_token"]:
+    st.switch_page("pages/Login.py")
+    
+# if "access_token" not in st.session_state:
+#     st.warning("Please log in first.")
+#     st.switch_page("pages/Login.py")
+
+# def login_view():
+#     st.title("🔐 Document Portal Login")
+
+#     username = st.text_input("Username")
+#     password = st.text_input("Password", type="password")
+
+#     if st.button("Login"):
+#         data = {
+#             "username": username,
+#             "password": password,
+#         }
+#         res = requests.post(
+#             f"{BACKEND_BASE_URL}/auth/login",
+#             data=data,  # form-data for OAuth2PasswordRequestForm
+#         )
+#         if res.status_code == 200:
+#             body = res.json()
+#             st.session_state["access_token"] = body["accessToken"]
+#             st.session_state["role"] = body["role"]
+#             st.session_state["user_id"] = body["userId"]
+#             st.session_state["username"] = body["username"]
+#             st.success("Logged in!")
+#             st.experimental_rerun()
+#         else:
+#             st.error("Invalid username or password")
+
+with st.sidebar:
+    role = st.session_state.get("role")
+    if role:
+        st.write(f"👤 Logged in as: {role.capitalize()}")
+        st.write(f"👤 Logged in as: {st.session_state['role'].capitalize()}")
+        if st.button("Logout"):
+            st.session_state["access_token"] = None
+            st.session_state["user_id"] = None
+            st.session_state["role"] = None
+            st.switch_page("pages/Login.py")
+
+
+# if not st.session_state["access_token"]:
+#     st.switch_page("Login.py")
 
 
 # -- UI Step 1: File Selection --
@@ -25,7 +90,8 @@ if uploaded_file and user_id and st.button("Start Upload"):
             "fileSize": len(uploaded_file.getvalue()),
             "fileType": uploaded_file.type
         }
-        res = requests.post(f"{BACKEND_BASE_URL}/api/v1/uploads/request", json=req_payload)
+        headers = {"Authorization": f"Bearer {st.session_state['access_token']}"}
+        res = requests.post(f"{BACKEND_BASE_URL}/api/v1/uploads/request", json=req_payload, headers=headers)
 
         if res.status_code != 200:
             st.error("Upload request failed: " + res.text)
@@ -137,7 +203,8 @@ if "file_id" in st.session_state:
 
 st.subheader("📜 Upload History")
 
-hist_res = requests.get(f"{BACKEND_BASE_URL}/api/v1/uploads/user/{user_id}")
+headers = {"Authorization": f"Bearer {st.session_state['access_token']}"}
+hist_res = requests.get(f"{BACKEND_BASE_URL}/api/v1/uploads/user/{st.session_state['user_id']}", headers=headers)
 
 if hist_res.status_code == 200 and hist_res.json():
     history = hist_res.json()
