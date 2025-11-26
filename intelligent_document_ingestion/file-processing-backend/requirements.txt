@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+python-dotenv
+boto3
+pydantic
+pypdf2
+pytesseract
+Pillow
+python-docx
+pandas
