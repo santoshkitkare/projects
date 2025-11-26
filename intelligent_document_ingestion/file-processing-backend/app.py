@@ -259,8 +259,86 @@ def list_user_docs(userId: str):
             "fileId": d.file_id,
             "fileName": d.file_name,
             "status": d.status,
-            "uploaded": d.upload_time,
-            "completed": d.completed_time
+            "uploadedAt": d.upload_time.isoformat() if d.upload_time else None,
+            "completedAt": d.completed_time.isoformat() if d.completed_time else None,
+            "error": d.error,
         }
         for d in docs
     ]
+
+
+@app.get("/api/v1/uploads/user/{user_id}/history")
+def get_history(user_id: str):
+    db = next(get_db())
+    docs = (
+        db.query(Document)
+        .filter(Document.user_id == user_id)
+        .order_by(Document.upload_time.desc())
+        .limit(50)
+        .all()
+    )
+    response = []
+    for d in docs:
+        response.append({
+            "fileId": d.file_id,
+            "fileName": d.file_name,
+            "status": d.status,
+            "uploadedAt": d.upload_time.isoformat() if d.upload_time else None,
+            "completedAt": d.completed_time.isoformat() if d.completed_time else None,
+            "error": d.error,
+        })
+    return response
+
+
+@app.get("/api/v1/uploads/{file_id}/download")
+def download(file_id: str):
+    db = next(get_db())
+    doc = db.query(Document).filter(Document.file_id == file_id).first()
+    if not doc:
+        raise HTTPException(404, "Not found")
+
+    url = s3_client.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": S3_BUCKET_NAME, "Key": doc.s3_key},
+        ExpiresIn=600,
+    )
+    return {"downloadUrl": url}
+
+@app.post("/api/v1/uploads/{file_id}/retry")
+def retry(file_id: str):
+    db = next(get_db())
+    doc = db.query(Document).filter(Document.file_id == file_id).first()
+    if not doc:
+        raise HTTPException(404, "Not found")
+
+    sqs = boto3.client("sqs", region_name=AWS_REGION)
+    sqs.send_message(
+        QueueUrl=os.getenv("SQS_QUEUE_URL"),
+        MessageBody=json.dumps({
+            "fileId": doc.file_id,
+            "userId": doc.user_id,
+            "fileType": doc.file_type,
+            "s3Location": {
+                "bucket": S3_BUCKET_NAME,
+                "key": doc.s3_key
+            }
+        })
+    )
+
+    doc.status = "pending"
+    doc.error = None
+    db.commit()
+    return {"message": "Retry triggered"}
+
+
+@app.delete("/api/v1/uploads/{file_id}")
+def delete_file(file_id: str):
+    db = next(get_db())
+    doc = db.query(Document).filter(Document.file_id == file_id).first()
+    if not doc:
+        raise HTTPException(404, "Not found")
+
+    s3_client.delete_object(Bucket=S3_BUCKET_NAME, Key=doc.s3_key)
+    db.delete(doc)
+    db.commit()
+    return {"message": "Deleted"}

@@ -81,15 +81,21 @@ if uploaded_file and user_id and st.button("Start Upload"):
             download_url = status["downloadUrl"]
 
             st.success("🎉 Processing completed!")
+            st.balloons()
 
             with st.expander("🔍 Extracted Metadata", expanded=True):
-                st.json(metadata)
-
-            st.download_button(
-                label="⬇ Download Original File",
-                data=requests.get(download_url).content,
-                file_name=status["metadata"].get("originalFileName", "document.pdf")
-            )
+                if metadata:
+                    st.json(metadata)
+                else:
+                    st.info("⚠ No metadata extracted")
+            if download_url:
+                st.download_button(
+                    label="⬇ Download Original File",
+                    data=requests.get(download_url).content,
+                    file_name=status["metadata"].get("originalFileName", "document.pdf")
+                )
+            else:
+                st.info("⚠ Download URL not available")
             break
         elif status["status"] == "failed":
             st.error(f"❌ Failed: {status['error']}")
@@ -129,11 +135,69 @@ if "file_id" in st.session_state:
         else:
             st.info("Still cooking… refresh again 👀")
 
-history = requests.get(f"{BACKEND_BASE_URL}/api/v1/uploads/user/{user_id}").json()
-df = pd.DataFrame(history)
+st.subheader("📜 Upload History")
 
-if len(df) > 0:
-    st.subheader("📜 Upload History")
-    st.dataframe(df)
+hist_res = requests.get(f"{BACKEND_BASE_URL}/api/v1/uploads/user/{user_id}")
+
+if hist_res.status_code == 200 and hist_res.json():
+    history = hist_res.json()
+
+    for item in history:
+        file_id = item["fileId"]
+        file_name = item["fileName"]
+        status = item["status"]
+        uploaded_at = item["uploadedAt"]
+        completed_at = item["completedAt"]
+        error_msg = item.get("error")
+
+        # Row Layout
+        col1, col2, col3, col4, col5, col6, col7 = st.columns([3, 2, 2, 1, 1, 1, 1])
+        col1.write(file_name)
+        col2.write(status)
+        col3.write(uploaded_at)
+
+        # 🟢 ⬇ Download (only when completed)
+        if status == "completed":
+            if col4.button("⬇", key=f"dl_{file_id}"):
+                r = requests.get(f"{BACKEND_BASE_URL}/api/v1/uploads/{file_id}/download")
+                if r.status_code == 200:
+                    dl = r.json()["downloadUrl"]
+                    st.session_state["download_url"] = dl
+                    st.session_state["download_name"] = file_name
+                else:
+                    st.error("Failed to fetch download URL")
+
+        # ⚠ Error Viewer (only when failed)
+        if status == "failed":
+            if col4.button("⚠", key=f"err_{file_id}"):
+                st.error(error_msg or "No error details available")
+
+        # 🔁 Retry processing (only when failed)
+        if status == "failed":
+            if col5.button("🔁", key=f"retry_{file_id}"):
+                requests.post(f"{BACKEND_BASE_URL}/api/v1/uploads/{file_id}/retry")
+                st.success(f"Retry triggered for {file_name}")
+                st.rerun()
+
+        # 🔍 Metadata side panel (only when completed)
+        if status == "completed":
+            if col5.button("🔍", key=f"meta_{file_id}"):
+                r = requests.get(f"{BACKEND_BASE_URL}/api/v1/uploads/{file_id}/status")
+                metadata = r.json().get("metadata", {})
+                st.sidebar.title("📌 Metadata Viewer")
+                st.sidebar.json(metadata)
+
+        # 🗑 Delete (always visible)
+        if col6.button("🗑", key=f"del_{file_id}"):
+            delete_res = requests.delete(f"{BACKEND_BASE_URL}/api/v1/uploads/{file_id}")
+            if delete_res.status_code == 200:
+                st.warning(f"{file_name} deleted")
+                st.rerun()
+            else:
+                st.error("Failed to delete")
+
+        # Completed timestamp display (col7)
+        if completed_at:
+            col7.write(completed_at)
 else:
-    st.info("No previous uploads found")
+    st.info("No uploads yet.")
