@@ -21,5 +21,6 @@ dependencies = [
     "python-multipart>=0.0.20",
     "sqlalchemy>=2.0.44",
     "streamlit>=1.51.0",
+    "streamlit-extras>=0.7.8",
     "uvicorn[standard]>=0.38.0",
 ]
