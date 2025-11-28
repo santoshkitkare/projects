@@ -14,9 +14,13 @@ AWS_REGION = os.getenv("AWS_REGION", "ap-south-1")
 if not S3_BUCKET_NAME:
     raise RuntimeError("S3_BUCKET_NAME env var is required")
 
-engine = create_engine(DATABASE_URL)
+# engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine)
 Base = declarative_base()
+
+
+# Base.metadata.create_all(bind=engine)
 
 s3_client = boto3.client("s3", region_name=AWS_REGION, 
                          config=boto3.session.Config(signature_version="s3v4",

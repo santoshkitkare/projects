@@ -7,9 +7,15 @@ import boto3
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
-
+from sqlalchemy import (
+    create_engine, Column, String, DateTime, Text, Integer, JSON
+)
+from sqlalchemy.orm import sessionmaker, declarative_base
+print("[WORKER] Importing dependencies...")
 load_dotenv()
-from app import Base, Document
+
+print("[WORKER] Importing dependencies...")
+# from app import Base, Document
 import google.generativeai as genai 
 
 # extract libs
@@ -26,12 +32,42 @@ S3_BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 SQS_QUEUE_URL = os.getenv("SQS_QUEUE_URL")
 AWS_REGION = os.getenv("AWS_REGION")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+print("[WORKER] Running with REAL extraction...")
+print("[WORKER] Listening to SQS queue:", SQS_QUEUE_URL)
+print("S3 Bucket:", S3_BUCKET_NAME)
+print("AWS Region:", AWS_REGION)
+print("Database URL:", DATABASE_URL)
+print("SQS Queue URL:", SQS_QUEUE_URL)
+
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(bind=engine)
 
+print("[WORKER] Setting up AWS clients...")
 s3_client = boto3.client("s3", region_name=AWS_REGION)
 sqs_client = boto3.client("sqs", region_name=AWS_REGION)
 
+print("[WORKER] Setting up database models...")
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    file_id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, index=True)
+    file_name = Column(String)
+    file_type = Column(String)
+    file_size = Column(Integer)
+    status = Column(String, default="pending")  # pending, processing, completed, failed
+    upload_time = Column(DateTime, default=datetime.utcnow)
+    completed_time = Column(DateTime, nullable=True)
+    s3_key = Column(String)
+    error = Column(Text, nullable=True)
+    extracted_metadata = Column(JSON, nullable=True)  # flexible for demo
+
+print("[WORKER] Setting up Gemini model...")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
@@ -254,6 +290,11 @@ Document text (partial):
 
 def main():
     print("[WORKER] Running with REAL extraction...")
+    print("[WORKER] Listening to SQS queue:", SQS_QUEUE_URL)
+    print("S3 Bucket:", S3_BUCKET_NAME)
+    print("AWS Region:", AWS_REGION)
+    print("Database URL:", DATABASE_URL)
+    print("SQS Queue URL:", SQS_QUEUE_URL)
     while True:
         resp = sqs_client.receive_message(
             QueueUrl=SQS_QUEUE_URL,
@@ -271,4 +312,5 @@ def main():
             
             
 if __name__ == "__main__":
+    print("[WORKER] Starting main loop...")
     main()

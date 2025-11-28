@@ -19,7 +19,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 import boto3
-from config import Base, S3_BUCKET_NAME, AWS_REGION, engine, s3_client
+from config import Base, S3_BUCKET_NAME, AWS_REGION, engine, s3_client, SessionLocal
 from helper import get_db, build_s3_key
 from user import User, get_current_user, TokenResponse, MeUpdateRequest
 from user import require_admin, AdminCreateUserRequest, AdminUserResponse, AdminUpdateUserRequest
@@ -59,7 +59,7 @@ class Document(Base):
     error = Column(Text, nullable=True)
     extracted_metadata = Column(JSON, nullable=True)  # flexible for demo
 
-# Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 # # ---- Create default admin if no users exist ----
 # from passlib.context import CryptContext
@@ -116,6 +116,8 @@ class UploadCompleteResponse(BaseModel):
 
 # ======== FastAPI App ========
 app = FastAPI(title="File Processing Backend")
+# Creste admin usedr if not exists
+# seed_admin()
 
 app.add_middleware(
     CORSMiddleware,

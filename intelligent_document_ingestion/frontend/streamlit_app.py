@@ -3,9 +3,10 @@ import requests
 import time
 import json
 from datetime import datetime
+import os
 
 
-BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="Dashboard", page_icon="📄", layout="wide")
 

@@ -1,16 +1,17 @@
 import streamlit as st
 import requests
+import os
 
-BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 if "access_token" not in st.session_state:
-    st.switch_page("Login")
+    st.switch_page("pages/Login.py")
 
 TOKEN = st.session_state["access_token"]
 headers = {"Authorization": f"Bearer {TOKEN}"}
 
 st.title("⚙ Admin — User Management")
-st.set_page_config(page_title="Admin User", layout="centered")
+
 
 if st.session_state["role"] != "admin":
     st.error("⛔ Admin access only")
@@ -21,7 +22,7 @@ res = requests.get(f"{BACKEND_URL}/admin/users", headers=headers)
 if res.status_code == 401:
     st.warning("Session expired. Login again.")
     st.session_state.clear()
-    st.switch_page("Login")
+    st.switch_page("pages/Login.py")
 
 users = res.json()
 
