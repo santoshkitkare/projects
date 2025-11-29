@@ -1,0 +1,25 @@
+aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 385046010545.dkr.ecr.ap-south-1.amazonaws.com
+
+
+docker build -t ido-backend . 
+docker tag ido-backend:latest    385046010545.dkr.ecr.ap-south-1.amazonaws.com/ido-backend:latest
+docker push 385046010545.dkr.ecr.ap-south-1.amazonaws.com/ido-backend:latest
+
+docker build -t ido-frontend . 
+docker tag ido-frontend:latest   385046010545.dkr.ecr.ap-south-1.amazonaws.com/ido-frontend:latest
+docker push 385046010545.dkr.ecr.ap-south-1.amazonaws.com/ido-frontend:latest
+
+
+docker build -t ido-worker . 
+docker tag ido-worker:latest     385046010545.dkr.ecr.ap-south-1.amazonaws.com/ido-worker:latest
+docker push 385046010545.dkr.ecr.ap-south-1.amazonaws.com/ido-worker:latest
+
+
+# Script to build docker and push images to ECR
+
+
+# Disable all tasks services
+terraform apply -var="desired_count_backend=0" -var="desired_count_frontend=0" -var="desired_count_worker=0"
+
+# Enable all tasks services
+terraform apply -var="desired_count_backend=1" -var="desired_count_frontend=1" -var="desired_count_worker=1"
