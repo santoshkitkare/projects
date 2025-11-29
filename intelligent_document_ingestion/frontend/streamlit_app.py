@@ -5,7 +5,6 @@ import json
 from datetime import datetime
 import os
 
-
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="Dashboard", page_icon="📄", layout="wide")
@@ -18,14 +17,15 @@ TOKEN = st.session_state["access_token"]
 headers = {"Authorization": f"Bearer {TOKEN}"}
 
 st.header("📄 Document Processing Portal")
-st.write(f"👤 Logged in as: `{st.session_state['username']}` ({st.session_state['role'].upper()})")
-
+st.write(
+    f"👤 Logged in as: `{st.session_state['username']}` "
+    f"({st.session_state['role'].upper()})"
+)
 
 # ----------------- Logout -----------------
 if st.button("🚪 Logout", type="secondary"):
     st.session_state.clear()
     st.switch_page("pages/Login.py")
-
 
 # ----------------- Upload File -----------------
 st.subheader("📤 Upload New Document")
@@ -39,16 +39,19 @@ userId = st.session_state["user_id"]
 
 if uploaded_file:
     if st.button("Start Upload 🚀", use_container_width=True):
+        file_bytes = uploaded_file.getvalue()
+        file_size = len(file_bytes)
+
         payload = {
             "userId": userId,
             "fileName": uploaded_file.name,
-            "fileSize": len(uploaded_file.getvalue()),
+            "fileSize": file_size,
             "fileType": uploaded_file.type,
         }
         res = requests.post(
             f"{BACKEND_URL}/api/v1/uploads/request",
             json=payload,
-            headers=headers
+            headers=headers,
         )
 
         if res.status_code == 401:
@@ -67,7 +70,7 @@ if uploaded_file:
         with st.spinner("⏫ Uploading to S3..."):
             upload_res = requests.put(
                 data["uploadUrl"],
-                data=uploaded_file.getvalue(),
+                data=file_bytes,
             )
         if upload_res.status_code not in [200, 204]:
             st.error("❌ Upload failed")
@@ -77,50 +80,73 @@ if uploaded_file:
         requests.post(
             f"{BACKEND_URL}/api/v1/uploads/complete",
             json={"fileId": fileId},
-            headers=headers
+            headers=headers,
         )
 
-        # Polling progress
+        # For very large files, avoid tight polling
+        if file_size > 20 * 1024 * 1024:  # > 20 MB
+            st.info(
+                "Large file detected. Processing may take a while — "
+                "you can monitor status in the history table below."
+            )
+            st.stop()
+
+        # Polling progress (adaptive interval)
         progress = st.progress(0)
         status_text = st.empty()
         pct = 0
+        poll_interval = 2
+        max_interval = 8
 
         while True:
-            time.sleep(2)
+            time.sleep(poll_interval)
             r = requests.get(
                 f"{BACKEND_URL}/api/v1/uploads/{fileId}/status",
-                headers=headers
+                headers=headers,
             )
             if r.status_code == 401:
                 st.warning("Session expired. Login again.")
                 st.session_state.clear()
                 st.switch_page("pages/Login.py")
+
             data = r.json()
-            status_text.write(f"📌 Status: {data['status']} — {data['message']}")
+            status = data["status"]
 
-            if data["status"] == "processing":
-                pct = min(pct + 10, 90)
+            status_text.write(f"📌 Status: {status} — {data['message']}")
+
+            if status == "processing":
+                # slow ramp-up for long-running jobs
+                pct = min(pct + 5, 90)
                 progress.progress(pct)
+                if poll_interval < max_interval:
+                    poll_interval += 1  # backoff to reduce load
 
-            if data["status"] == "failed":
+            if status == "pending":
+                # queued but not yet picked — also back off
+                if poll_interval < max_interval:
+                    poll_interval += 1
+
+            if status == "failed":
                 progress.progress(100)
                 st.error(data.get("error", "Processing failed"))
                 break
 
-            if data["status"] == "completed":
+            if status == "completed":
                 progress.progress(100)
                 st.success("🎉 Processing Completed!")
                 st.json(data["metadata"])
                 if data["downloadUrl"]:
-                    st.download_button("⬇ Download Original File", data["downloadUrl"])
+                    # NOTE: Streamlit can't directly download from URL content,
+                    # so we show URL or you can proxy through backend if needed.
+                    st.write("Download URL:")
+                    st.code(data["downloadUrl"])
                 break
-
 
 # ----------------- Document History -----------------
 st.subheader("📜 Upload History")
 res = requests.get(
     f"{BACKEND_URL}/api/v1/uploads/user/{userId}",
-    headers=headers
+    headers=headers,
 )
 
 if res.status_code == 401:
@@ -145,9 +171,11 @@ for item in history:
 
         col1.write(f"📄 **{item['fileName']}**")
         col2.write(f"🕒 {item['status']}")
-        col3.write(item["uploadedAt"].replace("T", " ").split(".")[0])
+        if item["uploadedAt"]:
+            col3.write(item["uploadedAt"].replace("T", " ").split(".")[0])
+        else:
+            col3.write("-")
 
-        # ---- Action buttons (icons with hover tooltips) ----
         with col4:
             a, b, c, d = st.columns(4)
 
@@ -156,9 +184,12 @@ for item in history:
                 if a.button("⬇", key=f"dl-{item['fileId']}"):
                     r = requests.get(
                         f"{BACKEND_URL}/api/v1/uploads/{item['fileId']}/download",
-                        headers=headers
+                        headers=headers,
                     )
-                    st.write(r.json()["downloadUrl"])
+                    if r.status_code == 200:
+                        st.write(r.json()["downloadUrl"])
+                    else:
+                        st.error("Unable to get download URL")
 
             # View Metadata
             if item["status"] == "completed":
@@ -170,7 +201,7 @@ for item in history:
                 if c.button("🔁", key=f"retry-{item['fileId']}"):
                     requests.post(
                         f"{BACKEND_URL}/api/v1/uploads/{item['fileId']}/retry",
-                        headers=headers
+                        headers=headers,
                     )
                     st.success("Retry triggered")
                     st.rerun()
@@ -179,21 +210,18 @@ for item in history:
             if d.button("🗑", key=f"del-{item['fileId']}"):
                 requests.delete(
                     f"{BACKEND_URL}/api/v1/uploads/{item['fileId']}",
-                    headers=headers
+                    headers=headers,
                 )
                 st.success("Deleted")
                 st.rerun()
 
-
-
-
-# ---------- Metadata Viewer Panel (outside loop to avoid duplicate widgets) ----------
+# ---------- Metadata Viewer Panel ----------
 if "view_metadata_fileId" in st.session_state:
     fileId = st.session_state["view_metadata_fileId"]
 
     res = requests.get(
         f"{BACKEND_URL}/api/v1/uploads/{fileId}/status",
-        headers=headers
+        headers=headers,
     )
 
     if res.status_code == 200:
@@ -202,10 +230,9 @@ if "view_metadata_fileId" in st.session_state:
         st.markdown("---")
         st.markdown("### 📌 Extracted Metadata")
 
-        # Unique key avoids duplication error
         meta_query = st.text_input("Search in metadata", key="meta_search_box")
 
-        if meta_query:
+        if meta_query and meta:
             q = meta_query.lower()
             filtered = {}
             for k, v in meta.items():
@@ -219,9 +246,6 @@ if "view_metadata_fileId" in st.session_state:
         if st.button("❌ Close metadata panel", key="meta_close"):
             del st.session_state["view_metadata_fileId"]
             st.rerun()
-
-
-
 
 # 🚨 Show Admin page link for Admin users
 if st.session_state["role"] == "admin":

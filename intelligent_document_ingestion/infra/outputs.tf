@@ -29,3 +29,6 @@ output "backend_access_url" {
   value = "http://ido-backend-svc.local:8000"
 }
 
+output "redis_endpoint" {
+  value = aws_elasticache_cluster.redis.cache_nodes[0].address
+}
