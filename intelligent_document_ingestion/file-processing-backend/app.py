@@ -247,7 +247,7 @@ def get_status(
     if redis_client:
         try:
             payload = (
-                resp_obj.model_dump()
+                resp_obj.model_dump(mode="json")
                 if hasattr(resp_obj, "model_dump")
                 else resp_obj.dict()
             )
