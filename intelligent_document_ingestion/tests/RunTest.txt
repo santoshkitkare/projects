@@ -1,0 +1,28 @@
+Repo folder structure:
+
+project-root/
+  file-processing-backend/
+    app.py
+    user.py
+    helper.py
+    config.py
+   worker/
+    worker.py
+    llm_prompts.py
+  frontend/
+    streamlit_app.py
+    pages/
+      Login.py
+      Admin_Users.py
+  tests/
+    ...
+
+
+pip install pytest pytest-cov httpx[jwt]  # plus your usual deps
+pytest -q   OR  pytest -vv
+# or with coverage
+pytest --cov=file_processing_backend --cov-report=term-missing  
+
+OR
+
+pytest --cov=app --cov=worker --cov-report=term-missing

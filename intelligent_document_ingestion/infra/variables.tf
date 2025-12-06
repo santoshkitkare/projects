@@ -71,3 +71,7 @@ variable "instance_type" {
   default = "db.t3.micro" # free-tier eligible
 }
 
+# variable "allowed_sg_ids" {
+#  type = list(string)
+#   description = "Security groups that are allowed to connect to Redis (e.g. backend SG)"
+# }

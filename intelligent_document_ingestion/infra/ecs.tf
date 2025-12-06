@@ -31,11 +31,12 @@ resource "aws_security_group" "ecs_sg" {
 
 
 resource "aws_ecs_task_definition" "backend" {
+  depends_on = [aws_elasticache_cluster.redis]
   family                   = "ido-backend-task"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
+  cpu                      = "512"
+  memory                   = "2048"
 
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = aws_iam_role.ecs_task_role.arn
@@ -55,7 +56,10 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "S3_BUCKET_NAME", value = var.s3_bucket_name },
         { name = "SQS_QUEUE_URL", value = var.sqs_queue_url },
         { name = "AWS_REGION", value = var.aws_region },
-        { name = "SECRET_KEY", value = var.secret_key }
+        { name = "SECRET_KEY", value = var.secret_key },
+        # ⭐ New — Auto injection from ElastiCache
+        { name = "REDIS_HOST",      value = aws_elasticache_cluster.redis.cache_nodes[0].address },
+        { name = "REDIS_PORT",      value = "6379" },
       ]
       logConfiguration = {
         logDriver = "awslogs"
