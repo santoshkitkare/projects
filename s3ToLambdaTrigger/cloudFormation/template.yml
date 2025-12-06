@@ -1,0 +1,220 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: S3 -> SQS -> Lambda parallel processing demo (with DLQ and queue policy)
+
+Parameters:
+  S3BucketName:
+    Type: String
+    Default: s3-file-processor-input-bucket-demo-12345
+  SqsQueueName:
+    Type: String
+    Default: fileuploadNotificationQueue
+  DlqName:
+    Type: String
+    Default: fileuploadNotificationQueue-dlq
+  BatchSize:
+    Type: Number
+    Default: 1
+  LambdaMemory:
+    Type: Number
+    Default: 1024
+  LambdaTimeout:
+    Type: Number
+    Default: 300
+  DdbTableName:
+    Type: String
+    Default: FileMetadata
+
+Resources:
+
+  InputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+
+  DLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref DlqName
+
+  FileQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Ref SqsQueueName
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DLQ.Arn
+        maxReceiveCount: 3
+
+  # Queue policy to allow S3 to send messages to queue
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref FileQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt FileQueue.Arn
+            Condition:
+              ArnLike:
+                aws:SourceArn: !GetAtt InputBucket.Arn
+
+  MetadataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref DdbTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: s3_key
+          AttributeType: S
+      KeySchema:
+        - AttributeName: s3_key
+          KeyType: HASH
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: s3-sqs-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: LambdaS3DDBPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:HeadObject
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt InputBucket.Arn
+                  - !Join [ '/', [ !GetAtt InputBucket.Arn, '*' ] ]
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:GetItem
+                Resource: !GetAtt MetadataTable.Arn
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt FileQueue.Arn
+
+  FileProcessorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: s3-file-processor
+      Handler: handler.lambda_handler
+      Runtime: python3.11
+      Timeout: !Ref LambdaTimeout
+      MemorySize: !Ref LambdaMemory
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          DDB_TABLE: !Ref DdbTableName
+          RESULT_BUCKET: !Ref S3BucketName
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import urllib.parse
+          from datetime import datetime
+
+          s3 = boto3.client('s3')
+          dynamodb = boto3.resource('dynamodb')
+          import os
+          table_name = os.environ.get('DDB_TABLE', 'FileMetadata')
+          table = dynamodb.Table(table_name)
+
+          def lambda_handler(event, context):
+              # event is an SQS event
+              print("event:", json.dumps(event))
+              processed = 0
+              for record in event.get("Records", []):
+                  body = record.get("body")
+                  if not body:
+                      continue
+                  try:
+                      s3_event = json.loads(body)
+                  except Exception as e:
+                      print("not json body:", e, body)
+                      continue
+
+                  # skip S3 test events (these are not ObjectCreated)
+                  # if it's the TestEvent format, it won't have Records[].s3
+                  if not s3_event.get("Records"):
+                      print("S3 test or unknown event, skipping:", s3_event)
+                      continue
+
+                  for s3_rec in s3_event.get("Records", []):
+                      s3info = s3_rec.get("s3", {})
+                      bucket = s3info.get("bucket", {}).get("name")
+                      key = s3info.get("object", {}).get("key")
+                      if not bucket or not key:
+                          print("missing bucket/key in s3 record:", s3_rec)
+                          continue
+                      key = urllib.parse.unquote_plus(key)
+                      try:
+                          head = s3.head_object(Bucket=bucket, Key=key)
+                          size = head.get("ContentLength", 0)
+                          last_modified = head.get("LastModified").isoformat() if head.get("LastModified") else None
+                      except Exception as e:
+                          print("head_object failed:", e)
+                          continue
+                      try:
+                          table.put_item(Item={
+                              "s3_key": key,
+                              "bucket": bucket,
+                              "file_size": size,
+                              "last_modified": last_modified,
+                              "processed_at": datetime.utcnow().isoformat()
+                          })
+                          processed += 1
+                      except Exception as e:
+                          print("ddb put failed:", e)
+              return {"processed": processed}
+
+  # Connect SQS to Lambda via EventSourceMapping (CloudFormation resource)
+  SQSEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt FileQueue.Arn
+      FunctionName: !GetAtt FileProcessorFunction.Arn
+      BatchSize: !Ref BatchSize
+      Enabled: True
+
+  # S3 Notification (Bucket Notification)
+  # CloudFormation does not support S3 Notification to SQS directly via a separate resource in some older specs,
+  # but you can use NotificationConfiguration property on AWS::S3::Bucket.
+  S3BucketNotification:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref S3BucketName
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Event: s3:ObjectCreated:*
+            Queue: !GetAtt FileQueue.Arn
+
+Outputs:
+  S3Bucket:
+    Value: !Ref InputBucket
+  SQSQueueUrl:
+    Value: !Ref FileQueue
+  SQSQueueArn:
+    Value: !GetAtt FileQueue.Arn
+  LambdaName:
+    Value: !Ref FileProcessorFunction
+  DDBTable:
+    Value: !Ref MetadataTable
