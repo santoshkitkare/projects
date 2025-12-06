@@ -1,0 +1,12 @@
+In this type of machine learning (unsupervised), the model is trained on unlabeled data. 
+Popular algorithms include:
+- K-Means
+- Principal Component Analysis (PCA)
+- Autoencoders
+
+There are no predefined output labels; the algorithm automatically detects 
+underlying patterns or structures within the data.
+Typical use cases include anomaly detection, customer clustering, 
+and dimensionality reduction.
+Performance can be measured qualitatively or with metrics such as silhouette score 
+and reconstruction error.

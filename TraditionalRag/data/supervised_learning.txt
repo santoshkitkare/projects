@@ -1,0 +1,12 @@
+In this type of machine learning (supervised), the model is trained on labeled data. 
+In simple terms, every training example has an input and an associated output label. 
+The objective is to build a model that generalizes well on unseen data. 
+Common algorithms include:
+- Linear Regression
+- Decision Trees
+- Random Forests
+- Support Vector Machines
+
+Classification and regression tasks are performed in supervised machine learning.
+For example: spam detection (classification) and house price prediction (regression).
+They can be evaluated using accuracy, F1-score, precision, recall, or mean squared error.
