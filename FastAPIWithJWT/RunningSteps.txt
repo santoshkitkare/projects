@@ -1,0 +1,9 @@
+How to start Postgres Server and Create Database?
+- Start Docker postgres:16 in Docker Desktop
+- Login to Docker using "docker exec -ti <docker id>
+- Run command to check existing databases
+    psql -U postgres -c "\l"
+- Create new databases
+    Login to postgres prompt using `psql -U postgres`
+    CREATE DATABASE mytestdb;
+- Confirm database is created or not using `psql -U postgres -c "\l"` command
